@@ -1,0 +1,124 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KMHWATER</title>
+<style>
+:root{--b:#0878d1;--bg:#f4f9fd;--c:#fff;--t:#18364d;--m:#658097;--l:#dbe8f2;--g:#159447;--r:#d64545;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1a26;--c:#12293a;--t:#e6f1f9;--m:#8fa8bb;--l:#244157}}
+:root[data-theme="dark"]{--bg:#0b1a26;--c:#12293a;--t:#e6f1f9;--m:#8fa8bb;--l:#244157}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(135deg,#0869b8,#10a4e8);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.logo{font-weight:800;font-size:22px;letter-spacing:1px}.sub{font-size:12px;opacity:.9}
+main{max-width:520px;margin:auto;padding:16px}
+.card{background:var(--c);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px #0a3d6214}
+h2{margin:4px 0 12px;font-size:22px}.m{color:var(--m);font-size:14px}
+button{border:0;border-radius:12px;padding:14px;font:700 16px inherit;font-family:inherit;cursor:pointer;width:100%;background:var(--b);color:#fff;margin-top:8px}
+button.o{background:var(--c);color:var(--b);border:2px solid var(--b)}button.s{width:auto;padding:8px 12px;font-size:14px;margin:0}
+button.opt{background:var(--c);color:var(--t);border:2px solid var(--l);text-align:left;display:flex;justify-content:space-between}
+input,select,textarea{width:100%;padding:14px;border:1px solid var(--l);border-radius:12px;font-size:16px;background:var(--c);color:var(--t);margin:4px 0 12px;font-family:inherit}
+label{font-weight:700;font-size:13px}
+.bar{height:6px;background:var(--l);border-radius:9px;margin-bottom:14px}.bar i{display:block;height:100%;background:var(--b);border-radius:9px}
+.q{display:flex;align-items:center;justify-content:center;gap:22px;margin:10px 0}.q button{width:56px;margin:0;font-size:26px}.q b{font-size:34px}
+.tl{list-style:none;padding:0;margin:8px 0}.tl li{padding:8px 0 8px 28px;position:relative;color:var(--m)}.tl li:before{content:"";position:absolute;left:4px;top:13px;width:12px;height:12px;border-radius:50%;background:var(--l)}.tl li.on{color:var(--t);font-weight:700}.tl li.on:before{background:var(--g)}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;background:var(--l);font-size:12px;font-weight:700}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px}.tabs button{width:auto;margin:0;padding:9px 13px;font-size:14px;white-space:nowrap;background:var(--c);color:var(--t);border:1px solid var(--l)}.tabs button.on{background:var(--b);color:#fff}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kpi .card{margin:0}.kpi b{font-size:26px;display:block}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center}
+a.btn{display:block;text-align:center;text-decoration:none;border-radius:12px;padding:14px;font-weight:700;background:#25D366;color:#fff;margin-top:8px}
+footer{text-align:center;padding:20px;font-size:13px;color:var(--m)}footer a{color:var(--m)}
+</style></head><body>
+<header><div><div class="logo">KMHWATER</div><div class="sub">Good quality. Good price. Delivered.</div></div><div id="hr"></div></header>
+<main id="app"></main>
+<footer><a href="#" onclick="v='pin';app();return false">Owner access</a></footer>
+<script>
+const P={id:'5L',name:'5L water jug',price:13,cost:10};
+const WA='212691291927'; // KMHWATER WhatsApp Business number, international format, no +
+const dg=n=>{n=String(n).replace(/\D/g,'');if(n.startsWith('00'))n=n.slice(2);else if(n.startsWith('0')&&n.length===10)n='212'+n.slice(1);return n};
+const wa=(n,t)=>'https://wa.me/'+dg(n)+'?text='+encodeURIComponent(t);
+const SL=['ASAP (~45 min)','Today 18:00–20:00','Tomorrow 10:00–12:00','Tomorrow 18:00–20:00'];
+const ST=['Pending','Confirmed','Out for delivery','Delivered'];
+let d;try{d=JSON.parse(localStorage.getItem('kmh2'))}catch(e){}
+d=d||{users:[],cur:null,orders:[],stock:60,subs:{}};
+const sv=()=>{try{localStorage.setItem('kmh2',JSON.stringify(d))}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const me=()=>d.users.find(u=>u.id===d.cur);
+let v='cust',step=null,o={qty:1,time:SL[0],pay:'Cash on delivery'},tab='Dashboard',last=null;
+const S=['addr','water','time','pay','confirm'];
+
+function app(){
+ $('#hr').innerHTML=v==='adm'?'<button class="s o" onclick="v=\'cust\';app()">Exit</button>':(me()?'<span class="sub" style="margin-right:8px">Hi, '+esc(me().name.split(' ')[0])+'</span><button class="s o" onclick="d.cur=null;sv();step=null;am=null;app()">Log out</button>':'');
+ $('#app').innerHTML=v==='adm'?adm():v==='pin'?pin():cust();
+}
+function go(s){step=s;app();window.scrollTo(0,0)}
+function pin(){return`<div class="card"><h2>Owner access</h2><label>PIN (demo: 1234)</label><input id="pin" type="password" inputmode="numeric"><button onclick="if($('#pin').value==='1234'){v='adm';app()}else{$('#pin').value='';$('#pin').placeholder='Wrong PIN'}">Open dashboard</button><button class="o" onclick="v='cust';app()">Back</button></div>`}
+
+function cust(){
+ const u=me();
+ if(!u){
+  const er='<p id="er" class="m" style="color:var(--r)"></p>',bk='<button class="o" onclick="am=null;app()">Back</button>';
+  if(am==='new')return`<div class="card"><h2>My 1st order</h2><p class="m">Create your account once, then reorder in 2 taps.</p><label>Full name</label><input id="n" autocomplete="name"><label>Phone / WhatsApp</label><input id="p" type="tel" autocomplete="tel" inputmode="tel"><label>Choose a 4-digit PIN</label><input id="k" type="password" inputmode="numeric" maxlength="4"><button onclick="mk()">Create account</button>${er}</div>`+bk;
+  if(am==='in')return`<div class="card"><h2>Welcome back</h2><label>Phone / WhatsApp</label><input id="p" type="tel" autocomplete="tel" inputmode="tel"><label>Your 4-digit PIN</label><input id="k" type="password" inputmode="numeric" maxlength="4"><button onclick="lg()">Log in</button>${er}</div>`+bk;
+  return`<div class="card"><h2>Water at your door.</h2><p class="m">Good quality. Good price. Delivered.</p><button onclick="am='new';app()">My 1st order</button><button class="o" onclick="am='in';app()">I have an account</button></div>`;
+ }
+ if(!step)step=u.addr?'home':'addr';
+ if(step==='home'){
+  const act=d.orders.find(x=>x.uid===u.id&&!['Delivered','Cancelled'].includes(x.status)),lo=d.orders.find(x=>x.uid===u.id);
+  return(act?`<div class="card"><div class="row"><b>${act.id}</b><span class="badge">${act.status}</span></div><p class="m">${act.qty} × ${P.name} · ${act.time}</p><button class="o" onclick="last='${act.id}';go('track')">Track delivery</button></div>`:'')+
+  (lo?`<div class="card"><h2>Order again</h2><p>${lo.qty} × ${P.name} · <b>${lo.qty*P.price} MAD</b><br><span class="m">${esc(u.addr)}</span></p><button onclick="o={qty:${lo.qty},time:SL[0],pay:'${lo.pay}'};go('confirm')">Reorder now</button></div>`:'')+
+  `<button class="${lo?'o':''}" onclick="go('water')">New order</button><button class="o" onclick="go('addr')">Edit my address</button>`;
+ }
+ if(step==='track'){
+  const x=d.orders.find(y=>y.id===last);if(!x)return go('home');
+  const i=ST.indexOf(x.status),sub=d.subs[u.id];
+  return`<div class="card"><div class="row"><h2>${x.id}</h2><span class="badge">${x.status}</span></div>
+  ${x.status==='Cancelled'?'<p>This order was cancelled.</p>':`<ul class="tl">${ST.map((s,k)=>`<li class="${k<=i?'on':''}">${s}</li>`).join('')}</ul>`}
+  <p class="m">${x.qty} × ${P.name} · ${x.total} MAD · ${x.pay}<br>${esc(x.time)}</p></div>
+  ${x.status==='Pending'?`<a class="btn" target="_blank" rel="noopener" href="${esc(wa(WA,`New KMHWATER order ${x.id}\n${x.qty} × ${P.name} (${x.total} MAD)\nName: ${x.name}\nPhone: ${x.phone}\nAddress: ${x.addr}\nTime: ${x.time}\nPayment: ${x.pay}`))}">WhatsApp didn't open? Tap here to send your order</a>`:''}
+  <button onclick="o={qty:${x.qty},time:SL[0],pay:'${x.pay}'};go('confirm')">Order again</button>
+  <button class="o" onclick="d.subs['${u.id}']=${sub?'null':`{qty:${x.qty},freq:'Every week'}`};sv();app()">${sub?'✓ Subscribed weekly — tap to stop':'Subscribe: same order every week'}</button>
+  <button class="o" onclick="go('home')">Home</button>`;
+ }
+ const k=S.indexOf(step),bar=`<div class="bar"><i style="width:${(k+1)*20}%"></i></div>`,back=k>0?`<button class="o" onclick="go('${S[k-1]}')">Back</button>`:`<button class="o" onclick="go('home')">Cancel</button>`;
+ if(step==='addr')return bar+`<div class="card"><h2>Where to deliver?</h2><label>Address</label><textarea id="a" rows="2" placeholder="Residence, building, room / street, neighborhood">${esc(u.addr)}</textarea><label>Phone</label><input id="p" type="tel" value="${esc(u.phone)}"><button onclick="sa()">Continue</button></div>`+back;
+ if(step==='water')return bar+`<div class="card"><h2>Choose water</h2><div class="row"><div><b>${P.name}</b><div class="m">${P.price} MAD each</div></div><b>${o.qty*P.price} MAD</b></div><div class="q"><button class="o" onclick="o.qty=Math.max(1,o.qty-1);app()">−</button><b>${o.qty}</b><button class="o" onclick="o.qty++;app()">+</button></div><button onclick="go('time')">Continue</button></div>`+back;
+ if(step==='time')return bar+`<div class="card"><h2>Delivery time</h2>${SL.map(s=>`<button class="opt" onclick="o.time='${s}';go('pay')">${s}</button>`).join('')}</div>`+back;
+ if(step==='pay')return bar+`<div class="card"><h2>Payment</h2>${['Cash on delivery','Mobile payment'].map(s=>`<button class="opt" onclick="o.pay='${s}';go('confirm')">${s}</button>`).join('')}</div>`+back;
+ if(step==='confirm')return bar+`<div class="card"><h2>Confirm</h2><div class="row"><span>${o.qty} × ${P.name}</span><b>${o.qty*P.price} MAD</b></div><p class="m">📍 ${esc(u.addr)}<br>🕒 ${esc(o.time)}<br>💳 ${esc(o.pay)}</p><button onclick="place()">Confirm order · ${o.qty*P.price} MAD</button></div>`+back;
+}
+let am=null;
+function mk(){const n=$('#n').value.trim(),p=$('#p').value.trim(),k=$('#k').value.trim();
+ if(!n||dg(p).length<9||!/^\d{4}$/.test(k))return $('#er').textContent='Enter your name, phone number and a 4-digit PIN.';
+ if(d.users.some(x=>dg(x.phone)===dg(p)))return $('#er').textContent='This number already has an account on this phone. Go back and tap "I have an account".';
+ const u={id:'u'+Date.now(),name:n,phone:p,pin:k,addr:'',created:new Date().toISOString()};d.users.push(u);d.cur=u.id;sv();step='addr';app()}
+function lg(){const p=$('#p').value.trim(),k=$('#k').value.trim(),u=d.users.find(x=>dg(x.phone)===dg(p));
+ if(!u)return $('#er').textContent='No account for this number on this phone. Go back and tap "My 1st order" (20 seconds).';
+ if(u.pin!==k)return $('#er').textContent='Wrong PIN.';
+ d.cur=u.id;sv();step=null;am=null;app()}
+const om=x=>`New KMHWATER order ${x.id}\n${x.qty} × ${P.name} (${x.total} MAD)\nName: ${x.name}\nPhone: ${x.phone}\nAddress: ${x.addr}\nTime: ${x.time}\nPayment: ${x.pay}`;
+function sa(){const a=$('#a').value.trim(),p=$('#p').value.trim();if(!a||!p)return;const u=me();u.addr=a;u.phone=p;sv();go('water')}
+function place(){const u=me();const x={id:'KMH-'+Date.now().toString().slice(-6),uid:u.id,name:u.name,phone:u.phone,addr:u.addr,qty:o.qty,total:o.qty*P.price,time:o.time,pay:o.pay,status:'Pending',at:new Date().toISOString()};d.orders.unshift(x);sv();last=x.id;go('track');try{window.open(wa(WA,om(x)),'_blank')}catch(e){}}
+addEventListener('storage',e=>{if(e.key==='kmh2'){try{d=JSON.parse(e.newValue)}catch(x){}if(v!=='pin')app()}});
+
+// ---------- Owner back-office ----------
+const T=['Dashboard','Orders','Customers','Deliveries','Stock','Revenue','Reports'];
+const day=s=>s.slice(0,10),today=()=>new Date().toISOString().slice(0,10);
+const dl=()=>d.orders.filter(x=>x.status==='Delivered');
+function setSt(id,s){const x=d.orders.find(y=>y.id===id);if(s==='Delivered'&&!x.sd){d.stock=Math.max(0,d.stock-x.qty);x.sd=1}x.status=s;sv();app()}
+function ord(x,btn){return`<div class="card"><div class="row"><b>${x.id}</b><span class="badge">${x.status}</span></div><p>${esc(x.name)} · ${x.qty} × ${P.name} · <b>${x.total} MAD</b><br><span class="m">📍 ${esc(x.addr)}<br>🕒 ${esc(x.time)} · 💳 ${esc(x.pay)}</span></p>${btn?`<div class="row"><a href="tel:${esc(x.phone)}" style="flex:1"><button class="o" style="margin:0">Call</button></a><a class="btn" style="flex:1;margin:0" target="_blank" rel="noopener" href="${esc(wa(x.phone,`Hello ${x.name}, your KMHWATER order ${x.id} (${x.qty} × ${P.name}, ${x.total} MAD) is now: ${x.status}.`))}">WhatsApp</a><select onchange="setSt('${x.id}',this.value)" style="flex:1;margin:0">${[...ST,'Cancelled'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></div>`:''}</div>`}
+function adm(){
+ const tb=`<div class="tabs">${T.map(t=>`<button class="${t===tab?'on':''}" onclick="tab='${t}';app()">${t}</button>`).join('')}</div>`;
+ const rev=dl().reduce((a,x)=>a+x.total,0),units=dl().reduce((a,x)=>a+x.qty,0),profit=rev-units*P.cost;
+ if(tab==='Dashboard'){const t=d.orders.filter(x=>day(x.at)===today()),pend=d.orders.filter(x=>x.status==='Pending').length;
+  return tb+`<div class="kpi"><div class="card"><b>${t.length}</b><span class="m">Orders today</span></div><div class="card"><b>${pend}</b><span class="m">Pending</span></div><div class="card"><b>${rev}</b><span class="m">Revenue (MAD)</span></div><div class="card"><b style="color:${d.stock<15?'var(--r)':'inherit'}">${d.stock}</b><span class="m">Jugs in stock${d.stock<15?' · low!':''}</span></div></div>`}
+ if(tab==='Orders')return tb+(d.orders.map(x=>ord(x,1)).join('')||'<p class="m">No orders yet.</p>');
+ if(tab==='Customers')return tb+(d.users.map(u=>{const os=d.orders.filter(x=>x.uid===u.id);return`<div class="card"><b>${esc(u.name)}</b>${d.subs[u.id]?' <span class="badge">Weekly</span>':''}<p class="m">📞 ${esc(u.phone)}<br>📍 ${esc(u.addr)||'—'}<br>${os.length} orders · ${os.reduce((a,x)=>a+x.total,0)} MAD</p></div>`}).join('')||'<p class="m">No customers yet.</p>');
+ if(tab==='Deliveries'){const l=d.orders.filter(x=>x.status==='Confirmed'||x.status==='Out for delivery'||x.status==='Pending');return tb+(l.map(x=>ord(x,1)).join('')||'<p class="m">Nothing to deliver.</p>')}
+ if(tab==='Stock')return tb+`<div class="card"><h2>${d.stock} jugs</h2><p class="m">Drops automatically when an order is marked Delivered.</p><label>Add stock received</label><input id="ad" type="number" min="1" inputmode="numeric" placeholder="e.g. 60"><button onclick="d.stock+=+($('#ad').value||0);sv();app()">Add to stock</button></div>`;
+ if(tab==='Revenue'){const by={};dl().forEach(x=>{by[day(x.at)]=(by[day(x.at)]||0)+x.total});
+  return tb+`<div class="kpi"><div class="card"><b>${rev}</b><span class="m">Revenue</span></div><div class="card"><b>${profit}</b><span class="m">Gross margin (${P.price-P.cost} MAD/jug)</span></div></div><div class="card" style="margin-top:12px">${Object.keys(by).sort().reverse().map(k=>`<div class="row"><span>${k}</span><b>${by[k]} MAD</b></div>`).join('')||'<span class="m">No delivered orders yet.</span>'}</div>`}
+ const rp=`KMHWATER report — ${today()}\nOrders: ${d.orders.length} (delivered ${dl().length}, cancelled ${d.orders.filter(x=>x.status==='Cancelled').length})\nJugs delivered: ${units}\nRevenue: ${rev} MAD\nGross margin: ${profit} MAD\nStock left: ${d.stock}\nCustomers: ${d.users.length} (weekly subscribers: ${Object.values(d.subs).filter(Boolean).length})`;
+ return tb+`<div class="card"><h2>Summary</h2><textarea rows="8" readonly>${esc(rp)}</textarea><p class="m">Select and copy to send on WhatsApp.</p></div>`;
+}
+app();
+</script></body></html>
