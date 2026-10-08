@@ -51,7 +51,7 @@ function app(){
  $('#app').innerHTML=v==='adm'?adm():v==='pin'?pin():cust();
 }
 function go(s){step=s;app();window.scrollTo(0,0)}
-function pin(){return`<div class="card"><h2>Owner access</h2><label>PIN (demo: 1234)</label><input id="pin" type="password" inputmode="numeric"><button onclick="if($('#pin').value==='1234'){v='adm';app()}else{$('#pin').value='';$('#pin').placeholder='Wrong PIN'}">Open dashboard</button><button class="o" onclick="v='cust';app()">Back</button></div>`}
+function pin(){return`<div class="card"><h2>Owner access</h2><label>Owner password</label><input id="pin" type="password" autocomplete="off"><button onclick="if($('#pin').value==='KMH1926#'){v='adm';app()}else{$('#pin').value='';$('#pin').placeholder='Wrong PIN'}">Open dashboard</button><button class="o" onclick="v='cust';app()">Back</button></div>`}
 
 function cust(){
  const u=me();
