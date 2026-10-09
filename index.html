@@ -42,6 +42,7 @@
 #orderbox .row{display:flex;justify-content:space-between;gap:8px;align-items:center}
 #orderbox a.wbtn{display:block;text-align:center;text-decoration:none;border-radius:12px;padding:14px;font-weight:700;background:#25D366;color:#fff;margin-top:8px}
 .orderbox-wrap{padding:0}
+.pricestrip{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.pricestrip span{background:var(--cyan);color:var(--navy);padding:8px 13px;border-radius:999px;font-weight:700;font-size:14px}
 </style>
 </head>
 <body>
@@ -52,7 +53,7 @@
 <div class="nav-actions"><button class="btn btn-light" onclick="openAccount()">My account</button><button class="btn btn-primary cart-btn" onclick="openCart()">Order <span class="cart-count" id="cartCount">0</span></button><button class="menu-toggle" aria-label="Open menu" onclick="toggleMenu()">☰</button></div>
 </div></header>
 <main id="home">
-<section class="hero"><div class="container hero-grid"><div><div class="eyebrow"><span></span> Simple, reliable water delivery</div><h1>Good water.<br><em>Right to your door.</em></h1><p>Stay hydrated without the extra trip. Choose what you need, tell us where to deliver, and let KMHWATER take care of the rest.</p><div class="hero-ctas"><a class="btn btn-primary" href="#products">Explore products <span>↗</span></a><button class="btn btn-outline" onclick="openAccount()">Manage my orders</button></div><div class="trust-row"><span><i class="check">✓</i> Straightforward prices</span><span><i class="check">✓</i> Convenient ordering</span><span><i class="check">✓</i> Casablanca-focused</span></div></div>
+<section class="hero"><div class="container hero-grid"><div><div class="eyebrow"><span></span> Simple, reliable water delivery</div><h1>Good water.<br><em>Right to your door.</em></h1><p>Stay hydrated without the extra trip. Choose what you need, tell us where to deliver, and let KMHWATER take care of the rest.</p><div class="pricestrip" id="pricestrip"></div><div class="hero-ctas"><a class="btn btn-primary" href="#products">Explore products <span>↗</span></a><button class="btn btn-outline" onclick="openAccount()">Manage my orders</button></div><div class="trust-row"><span><i class="check">✓</i> Straightforward prices</span><span><i class="check">✓</i> Convenient ordering</span><span><i class="check">✓</i> Casablanca-focused</span></div></div>
 <div class="hero-art" aria-label="Illustration of KMHWATER bottled water"><div class="art-blob"></div><div class="water-card"><span class="drop one">✦</span><span class="drop two">✦</span><div class="bottle"></div></div><div class="float-tag tag-top">Easy ordering<small>Choose in a few taps</small></div><div class="float-tag tag-bottom">Made for everyday<small>Home · Study · Work</small></div></div></div></section>
 <section class="section" id="products"><div class="container"><div class="section-head"><div><div class="mini-label">The essentials</div><h2>Choose your water.</h2></div><p>Pick the size and quantity that works for you. Tap + to add a pack to your order.</p></div><div class="product-grid" id="productGrid"></div></div></section>
 <section class="benefits" id="why"><div class="container benefit-grid"><div class="benefit"><div class="benefit-icon">💧</div><div><h3>Everyday hydration</h3><p>Order the amount you need for your room, household, or shared space.</p></div></div><div class="benefit"><div class="benefit-icon">📱</div><div><h3>Simple on your phone</h3><p>A clean, mobile-friendly experience that makes placing an order straightforward.</p></div></div><div class="benefit"><div class="benefit-icon">🤝</div><div><h3>Personal service</h3><p>Clear order details help you and the delivery team stay on the same page.</p></div></div></div></section>
@@ -65,7 +66,7 @@
 <div class="toast" id="toast" role="status"></div>
 <script>
 const COST=10;
-const PRODUCTS=[{id:'small',name:'Everyday bottle',size:'5 L bottle',units:1,price:13,desc:'A practical size for daily use.',icon:'🫗',tag:'Popular'},{id:'large',name:'Family pack',size:'Two 5 L bottles',units:2,price:25,desc:'Stock up for a shared room or home.',icon:'💧',tag:'Good value'},{id:'case',name:'Study group pack',size:'Four 5 L bottles',units:4,price:48,desc:'A convenient option for roommates.',icon:'📦',tag:'Shared spaces'}];
+const PRODUCTS=[{id:'small',name:'Everyday bottle',size:'5 L bottle',units:1,price:13,desc:'A practical size for daily use.',icon:'🫗',tag:'Popular'}];
 const money=n=>Number(n).toFixed(2).replace(/\.00$/,'')+' MAD';
 const pk=c=>PRODUCTS.filter(p=>(c[p.id]||0)>0);
 const tot=c=>pk(c).reduce((a,p)=>a+p.price*c[p.id],0);
@@ -151,25 +152,27 @@ function chk(){fetch(API+'?action=track&id='+encodeURIComponent(last)).then(r=>r
 let AK='',AO=[];
 async function alog(){const k=$('#pin').value;$('#pe').textContent='Checking…';try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(k));const j=await r.json();if(j.ok){AK=k;AO=j.orders.reverse();v='adm';app()}else $('#pe').textContent='Wrong password.'}catch(e){$('#pe').textContent='No connection. Try again.'}}
 async function loadA(){try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(AK));const j=await r.json();if(j.ok){const n=j.orders.reverse();if(JSON.stringify(n)!==JSON.stringify(AO)){AO=n;if(v==='adm')app()}}}catch(e){}}
+function addEx(){const n=$('#ex1').value.trim(),a=+$('#ex2').value;if(!n||!(a>0))return;d.exp=d.exp||[];d.exp.push({n:n,a:a,t:today()});sv();app()}
 function cu(){const m={};AO.forEach(x=>{const k=dg(x.phone);m[k]=m[k]||{name:x.name,phone:x.phone,addr:x.addr,n:0,sum:0};m[k].n++;m[k].sum+=+x.total||0});return Object.values(m)}
 
-const T=['Dashboard','Orders','Customers','Deliveries','Stock','Revenue','Reports'];
+const T=['Dashboard','Orders','Customers','Deliveries','Stock','Revenue','Expenses','Reports'];
 const day=s=>s.slice(0,10),today=()=>new Date().toISOString().slice(0,10);
 const dl=()=>AO.filter(x=>x.status==='Delivered');
 function setSt(id,st){const x=AO.find(y=>y.id===id);if(!x)return;d.sd=d.sd||{};if(st==='Delivered'&&!d.sd[id]){d.sd[id]=1;d.stock=Math.max(0,d.stock-(+x.qty||0))}x.status=st;sv();post({action:'status',key:AK,id:id,status:st});app()}
 function ord(x,btn){return`<div class="card"><div class="row"><b>${x.id}</b><span class="badge">${x.status}</span></div><p>${esc(x.name)} · ${x.qty} jug(s) · <b>${x.total} MAD</b><br><span class="m">📍 ${esc(x.addr)}<br>🕒 ${esc(x.time)} · 💳 ${esc(x.pay)}</span></p>${btn?`<div class="row"><a href="tel:${esc(x.phone)}" style="flex:1"><button class="o" style="margin:0">Call</button></a><a class="wbtn" style="flex:1;margin:0" target="_blank" rel="noopener" href="${esc(wa(x.phone,`Hello ${x.name}, your KMHWATER order ${x.id} (${x.qty} jug(s), ${x.total} MAD) is now: ${x.status}.`))}">WhatsApp</a><select onchange="setSt('${x.id}',this.value)" style="flex:1;margin:0">${[...ST,'Cancelled'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></div>`:''}</div>`}
 function adm(){
  const tb=`<div class="tabs">${T.map(t=>`<button class="${t===tab?'on':''}" onclick="tab='${t}';app()">${t}</button>`).join('')}<button onclick="loadA()">↻</button></div>`;
- const rev=dl().reduce((a,x)=>a+x.total,0),units=dl().reduce((a,x)=>a+x.qty,0),profit=rev-units*COST;
+ const rev=dl().reduce((a,x)=>a+x.total,0),units=dl().reduce((a,x)=>a+x.qty,0),profit=rev-units*COST,ex=(d.exp||[]).reduce((a,e)=>a+e.a,0),net=profit-ex;
  if(tab==='Dashboard'){const t=AO.filter(x=>day(x.at)===today()),pend=AO.filter(x=>x.status==='Pending').length;
   return tb+`<div class="kpi"><div class="card"><b>${t.length}</b><span class="m">Orders today</span></div><div class="card"><b>${pend}</b><span class="m">Pending</span></div><div class="card"><b>${rev}</b><span class="m">Revenue (MAD)</span></div><div class="card"><b style="color:${d.stock<15?'var(--r)':'inherit'}">${d.stock}</b><span class="m">Jugs in stock${d.stock<15?' · low!':''}</span></div></div>`}
  if(tab==='Orders')return tb+(AO.map(x=>ord(x,1)).join('')||'<p class="m">No orders yet.</p>');
  if(tab==='Customers')return tb+(cu().map(u=>`<div class="card"><b>${esc(u.name)}</b><p class="m">📞 ${esc(u.phone)}<br>📍 ${esc(u.addr)||'—'}<br>${u.n} orders · ${u.sum} MAD</p></div>`).join('')||'<p class="m">No customers yet.</p>');
  if(tab==='Deliveries'){const l=AO.filter(x=>x.status==='Confirmed'||x.status==='Out for delivery'||x.status==='Pending');return tb+(l.map(x=>ord(x,1)).join('')||'<p class="m">Nothing to deliver.</p>')}
  if(tab==='Stock')return tb+`<div class="card"><h2>${d.stock} jugs</h2><p class="m">Drops automatically when an order is marked Delivered.</p><label>Add stock received</label><input id="ad" type="number" min="1" inputmode="numeric" placeholder="e.g. 60"><button onclick="d.stock+=+($('#ad').value||0);sv();app()">Add to stock</button></div>`;
+ if(tab==='Expenses'){d.exp=d.exp||[];return tb+`<div class="card"><h2>Add expense</h2><label>What for</label><input id="ex1" placeholder="Fuel, bottles, transport…"><label>Amount (MAD)</label><input id="ex2" type="number" inputmode="decimal"><button onclick="addEx()">Save expense</button><p class="m">Total so far: ${ex} MAD. Saved on this phone.</p></div>`+d.exp.slice().reverse().map(e=>`<div class="card row"><span>${esc(e.n)}<br><span class="m">${e.t}</span></span><b>${e.a} MAD</b></div>`).join('')}
  if(tab==='Revenue'){const by={};dl().forEach(x=>{by[day(x.at)]=(by[day(x.at)]||0)+x.total});
-  return tb+`<div class="kpi"><div class="card"><b>${rev}</b><span class="m">Revenue</span></div><div class="card"><b>${profit}</b><span class="m">Gross margin</span></div></div><div class="card" style="margin-top:12px">${Object.keys(by).sort().reverse().map(k=>`<div class="row"><span>${k}</span><b>${by[k]} MAD</b></div>`).join('')||'<span class="m">No delivered orders yet.</span>'}</div>`}
- const rp=`KMHWATER report — ${today()}\nOrders: ${AO.length} (delivered ${dl().length}, cancelled ${AO.filter(x=>x.status==='Cancelled').length})\nJugs delivered: ${units}\nRevenue: ${rev} MAD\nGross margin: ${profit} MAD\nStock left: ${d.stock}\nCustomers: ${cu().length}`;
+  return tb+`<div class="kpi"><div class="card"><b>${rev}</b><span class="m">Revenue</span></div><div class="card"><b>${profit}</b><span class="m">Gross margin</span></div><div class="card"><b>${ex}</b><span class="m">Expenses</span></div><div class="card"><b>${net}</b><span class="m">Net profit</span></div></div><div class="card" style="margin-top:12px"><b>Suggested split of net profit</b><div class="row"><span>Growth (50%)</span><b>${Math.round(Math.max(0,net)*.5)} MAD</b></div><div class="row"><span>Reserve (30%)</span><b>${Math.round(Math.max(0,net)*.3)} MAD</b></div><div class="row"><span>Partners (20%)</span><b>${Math.round(Math.max(0,net)*.2)} MAD</b></div></div><div class="card" style="margin-top:12px">${Object.keys(by).sort().reverse().map(k=>`<div class="row"><span>${k}</span><b>${by[k]} MAD</b></div>`).join('')||'<span class="m">No delivered orders yet.</span>'}</div>`}
+ const rp=`KMHWATER report — ${today()}\nOrders: ${AO.length} (delivered ${dl().length}, cancelled ${AO.filter(x=>x.status==='Cancelled').length})\nJugs delivered: ${units}\nRevenue: ${rev} MAD\nGross margin: ${profit} MAD\nExpenses: ${ex} MAD\nNet profit: ${net} MAD\nStock left: ${d.stock}\nCustomers: ${cu().length}`;
  return tb+`<div class="card"><h2>Summary</h2><textarea rows="8" readonly>${esc(rp)}</textarea><p class="m">Select and copy to send on WhatsApp.</p></div>`;
 }
 
@@ -184,8 +187,9 @@ const openCart=goOrder;
 function addToCart(id){o.cart[id]=(o.cart[id]||0)+1;updateCount();toast('Added to your order')}
 function toggleMenu(){document.getElementById('navlinks').classList.toggle('open')}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove('show'),2400)}
-function renderProducts(){document.getElementById('productGrid').innerHTML=PRODUCTS.map(p=>`<article class="product"><div class="product-visual"><span class="pill">${p.tag}</span><span class="product-icon">${p.icon}</span></div><h3>${p.name}</h3><p class="desc">${p.size} · ${p.desc}</p><div class="product-bottom"><div class="price">${money(p.price)}<small> / pack</small></div><button class="add-btn" aria-label="Add ${p.name}" onclick="addToCart('${p.id}')">+</button></div></article>`).join('')}
+function renderProducts(){document.getElementById('productGrid').innerHTML=PRODUCTS.map(p=>`<article class="product"><div class="product-visual"><span class="pill">${p.tag}</span><span class="product-icon">${p.icon}</span></div><h3>${p.name}</h3><p class="desc">${p.size} · ${p.desc}</p><div class="product-bottom"><div class="price">${money(p.price)}<small> / bottle</small></div><button class="add-btn" aria-label="Add ${p.name}" onclick="addToCart('${p.id}')">+</button></div></article>`).join('')}
 document.getElementById('year').textContent=new Date().getFullYear();
+document.getElementById('pricestrip').innerHTML=PRODUCTS.map(p=>'<span>'+p.size+' · '+money(p.price)+'</span>').join('');
 renderProducts();updateCount();app();
 </script>
 </body></html>
