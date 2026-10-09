@@ -33,6 +33,7 @@ footer{text-align:center;padding:20px;font-size:13px;color:var(--m)}footer a{col
 <script>
 const P={id:'5L',name:'5L water jug',price:13,cost:10};
 const WA='212691291927'; // KMHWATER WhatsApp Business number, international format, no +
+const API='https://script.google.com/macros/s/AKfycbz9HzPHhMYhUSPB_sIbVngdQOVUeSaVmfptCRwEJhw5WlaWpQbl_DwuFLuvtTdxtQIe/exec';
 const dg=n=>{n=String(n).replace(/\D/g,'');if(n.startsWith('00'))n=n.slice(2);else if(n.startsWith('0')&&n.length===10)n='212'+n.slice(1);return n};
 const wa=(n,t)=>'https://wa.me/'+dg(n)+'?text='+encodeURIComponent(t);
 const SL=['ASAP (~45 min)','Today 18:00–20:00','Tomorrow 10:00–12:00','Tomorrow 18:00–20:00'];
@@ -46,12 +47,15 @@ const me=()=>d.users.find(u=>u.id===d.cur);
 let v='cust',step=null,o={qty:1,time:SL[0],pay:'Cash on delivery'},tab='Dashboard',last=null;
 const S=['addr','water','time','pay','confirm'];
 
+let tm=null;
 function app(){
+ clearInterval(tm);tm=null;
+ if(v==='cust'&&step==='track'&&last){tm=setInterval(chk,15000);chk()}else if(v==='adm')tm=setInterval(loadA,20000);
  $('#hr').innerHTML=v==='adm'?'<button class="s o" onclick="v=\'cust\';app()">Exit</button>':(me()?'<span class="sub" style="margin-right:8px">Hi, '+esc(me().name.split(' ')[0])+'</span><button class="s o" onclick="d.cur=null;sv();step=null;am=null;app()">Log out</button>':'');
  $('#app').innerHTML=v==='adm'?adm():v==='pin'?pin():cust();
 }
 function go(s){step=s;app();window.scrollTo(0,0)}
-function pin(){return`<div class="card"><h2>Owner access</h2><label>Owner password</label><input id="pin" type="password" autocomplete="off"><button onclick="if($('#pin').value==='KMH1926#'){v='adm';app()}else{$('#pin').value='';$('#pin').placeholder='Wrong PIN'}">Open dashboard</button><button class="o" onclick="v='cust';app()">Back</button></div>`}
+function pin(){return`<div class="card"><h2>Owner access</h2><label>Owner password</label><input id="pin" type="password" autocomplete="off"><button onclick="alog()">Open dashboard</button><p id="pe" class="m"></p><button class="o" onclick="v='cust';app()">Back</button></div>`}
 
 function cust(){
  const u=me();
@@ -97,27 +101,35 @@ function lg(){const p=$('#p').value.trim(),k=$('#k').value.trim(),u=d.users.find
  d.cur=u.id;sv();step=null;am=null;app()}
 const om=x=>`New KMHWATER order ${x.id}\n${x.qty} × ${P.name} (${x.total} MAD)\nName: ${x.name}\nPhone: ${x.phone}\nAddress: ${x.addr}\nTime: ${x.time}\nPayment: ${x.pay}`;
 function sa(){const a=$('#a').value.trim(),p=$('#p').value.trim();if(!a||!p)return;const u=me();u.addr=a;u.phone=p;sv();go('water')}
-function place(){const u=me();const x={id:'KMH-'+Date.now().toString().slice(-6),uid:u.id,name:u.name,phone:u.phone,addr:u.addr,qty:o.qty,total:o.qty*P.price,time:o.time,pay:o.pay,status:'Pending',at:new Date().toISOString()};d.orders.unshift(x);sv();last=x.id;go('track');try{window.open(wa(WA,om(x)),'_blank')}catch(e){}}
+function place(){const u=me();const x={id:'KMH-'+Date.now().toString().slice(-6),uid:u.id,name:u.name,phone:u.phone,addr:u.addr,qty:o.qty,total:o.qty*P.price,time:o.time,pay:o.pay,status:'Pending',at:new Date().toISOString()};d.orders.unshift(x);sv();sendOrder(x);last=x.id;go('track');try{window.open(wa(WA,om(x)),'_blank')}catch(e){}}
 addEventListener('storage',e=>{if(e.key==='kmh2'){try{d=JSON.parse(e.newValue)}catch(x){}if(v!=='pin')app()}});
 
 // ---------- Owner back-office ----------
+const post=o=>{try{fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(o)})}catch(e){}};
+function sendOrder(x){post({action:'order',id:x.id,name:x.name,phone:x.phone,addr:x.addr,qty:x.qty,total:x.total,time:x.time,pay:x.pay})}
+function chk(){fetch(API+'?action=track&id='+encodeURIComponent(last)).then(r=>r.json()).then(j=>{const x=AO.find(y=>y.id===last);if(j.ok&&x&&j.status&&j.status!==x.status){x.status=j.status;sv();app()}}).catch(()=>{})}
+let AK='',AO=[];
+async function alog(){const k=$('#pin').value;$('#pe').textContent='Checking…';try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(k));const j=await r.json();if(j.ok){AK=k;AO=j.orders.reverse();v='adm';app()}else $('#pe').textContent='Wrong password.'}catch(e){$('#pe').textContent='No connection. Try again.'}}
+async function loadA(){try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(AK));const j=await r.json();if(j.ok){const n=j.orders.reverse();if(JSON.stringify(n)!==JSON.stringify(AO)){AO=n;if(v==='adm')app()}}}catch(e){}}
+function cu(){const m={};AO.forEach(x=>{const k=dg(x.phone);m[k]=m[k]||{name:x.name,phone:x.phone,addr:x.addr,n:0,sum:0};m[k].n++;m[k].sum+=+x.total||0});return Object.values(m)}
+
 const T=['Dashboard','Orders','Customers','Deliveries','Stock','Revenue','Reports'];
 const day=s=>s.slice(0,10),today=()=>new Date().toISOString().slice(0,10);
-const dl=()=>d.orders.filter(x=>x.status==='Delivered');
-function setSt(id,s){const x=d.orders.find(y=>y.id===id);if(s==='Delivered'&&!x.sd){d.stock=Math.max(0,d.stock-x.qty);x.sd=1}x.status=s;sv();app()}
+const dl=()=>AO.filter(x=>x.status==='Delivered');
+function setSt(id,st){const x=AO.find(y=>y.id===id);if(!x)return;d.sd=d.sd||{};if(st==='Delivered'&&!d.sd[id]){d.sd[id]=1;d.stock=Math.max(0,d.stock-(+x.qty||0))}x.status=st;sv();post({action:'status',key:AK,id:id,status:st});app()}
 function ord(x,btn){return`<div class="card"><div class="row"><b>${x.id}</b><span class="badge">${x.status}</span></div><p>${esc(x.name)} · ${x.qty} × ${P.name} · <b>${x.total} MAD</b><br><span class="m">📍 ${esc(x.addr)}<br>🕒 ${esc(x.time)} · 💳 ${esc(x.pay)}</span></p>${btn?`<div class="row"><a href="tel:${esc(x.phone)}" style="flex:1"><button class="o" style="margin:0">Call</button></a><a class="btn" style="flex:1;margin:0" target="_blank" rel="noopener" href="${esc(wa(x.phone,`Hello ${x.name}, your KMHWATER order ${x.id} (${x.qty} × ${P.name}, ${x.total} MAD) is now: ${x.status}.`))}">WhatsApp</a><select onchange="setSt('${x.id}',this.value)" style="flex:1;margin:0">${[...ST,'Cancelled'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></div>`:''}</div>`}
 function adm(){
- const tb=`<div class="tabs">${T.map(t=>`<button class="${t===tab?'on':''}" onclick="tab='${t}';app()">${t}</button>`).join('')}</div>`;
+ const tb=`<div class="tabs">${T.map(t=>`<button class="${t===tab?'on':''}" onclick="tab='${t}';app()">${t}</button>`).join('')}<button onclick="loadA()">↻</button></div>`;
  const rev=dl().reduce((a,x)=>a+x.total,0),units=dl().reduce((a,x)=>a+x.qty,0),profit=rev-units*P.cost;
- if(tab==='Dashboard'){const t=d.orders.filter(x=>day(x.at)===today()),pend=d.orders.filter(x=>x.status==='Pending').length;
+ if(tab==='Dashboard'){const t=AO.filter(x=>day(x.at)===today()),pend=AO.filter(x=>x.status==='Pending').length;
   return tb+`<div class="kpi"><div class="card"><b>${t.length}</b><span class="m">Orders today</span></div><div class="card"><b>${pend}</b><span class="m">Pending</span></div><div class="card"><b>${rev}</b><span class="m">Revenue (MAD)</span></div><div class="card"><b style="color:${d.stock<15?'var(--r)':'inherit'}">${d.stock}</b><span class="m">Jugs in stock${d.stock<15?' · low!':''}</span></div></div>`}
- if(tab==='Orders')return tb+(d.orders.map(x=>ord(x,1)).join('')||'<p class="m">No orders yet.</p>');
- if(tab==='Customers')return tb+(d.users.map(u=>{const os=d.orders.filter(x=>x.uid===u.id);return`<div class="card"><b>${esc(u.name)}</b>${d.subs[u.id]?' <span class="badge">Weekly</span>':''}<p class="m">📞 ${esc(u.phone)}<br>📍 ${esc(u.addr)||'—'}<br>${os.length} orders · ${os.reduce((a,x)=>a+x.total,0)} MAD</p></div>`}).join('')||'<p class="m">No customers yet.</p>');
- if(tab==='Deliveries'){const l=d.orders.filter(x=>x.status==='Confirmed'||x.status==='Out for delivery'||x.status==='Pending');return tb+(l.map(x=>ord(x,1)).join('')||'<p class="m">Nothing to deliver.</p>')}
+ if(tab==='Orders')return tb+(AO.map(x=>ord(x,1)).join('')||'<p class="m">No orders yet.</p>');
+ if(tab==='Customers')return tb+(cu().map(u=>`<div class="card"><b>${esc(u.name)}</b><p class="m">📞 ${esc(u.phone)}<br>📍 ${esc(u.addr)||'—'}<br>${u.n} orders · ${u.sum} MAD</p></div>`).join('')||'<p class="m">No customers yet.</p>');
+ if(tab==='Deliveries'){const l=AO.filter(x=>x.status==='Confirmed'||x.status==='Out for delivery'||x.status==='Pending');return tb+(l.map(x=>ord(x,1)).join('')||'<p class="m">Nothing to deliver.</p>')}
  if(tab==='Stock')return tb+`<div class="card"><h2>${d.stock} jugs</h2><p class="m">Drops automatically when an order is marked Delivered.</p><label>Add stock received</label><input id="ad" type="number" min="1" inputmode="numeric" placeholder="e.g. 60"><button onclick="d.stock+=+($('#ad').value||0);sv();app()">Add to stock</button></div>`;
  if(tab==='Revenue'){const by={};dl().forEach(x=>{by[day(x.at)]=(by[day(x.at)]||0)+x.total});
   return tb+`<div class="kpi"><div class="card"><b>${rev}</b><span class="m">Revenue</span></div><div class="card"><b>${profit}</b><span class="m">Gross margin (${P.price-P.cost} MAD/jug)</span></div></div><div class="card" style="margin-top:12px">${Object.keys(by).sort().reverse().map(k=>`<div class="row"><span>${k}</span><b>${by[k]} MAD</b></div>`).join('')||'<span class="m">No delivered orders yet.</span>'}</div>`}
- const rp=`KMHWATER report — ${today()}\nOrders: ${d.orders.length} (delivered ${dl().length}, cancelled ${d.orders.filter(x=>x.status==='Cancelled').length})\nJugs delivered: ${units}\nRevenue: ${rev} MAD\nGross margin: ${profit} MAD\nStock left: ${d.stock}\nCustomers: ${d.users.length} (weekly subscribers: ${Object.values(d.subs).filter(Boolean).length})`;
+ const rp=`KMHWATER report — ${today()}\nOrders: ${AO.length} (delivered ${dl().length}, cancelled ${AO.filter(x=>x.status==='Cancelled').length})\nJugs delivered: ${units}\nRevenue: ${rev} MAD\nGross margin: ${profit} MAD\nStock left: ${d.stock}\nCustomers: ${cu().length}`;
  return tb+`<div class="card"><h2>Summary</h2><textarea rows="8" readonly>${esc(rp)}</textarea><p class="m">Select and copy to send on WhatsApp.</p></div>`;
 }
 app();
