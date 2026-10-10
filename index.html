@@ -43,6 +43,7 @@
 #orderbox a.wbtn{display:block;text-align:center;text-decoration:none;border-radius:12px;padding:14px;font-weight:700;background:#25D366;color:#fff;margin-top:8px}
 .orderbox-wrap{padding:0}
 .pricestrip{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.pricestrip span{background:var(--cyan);color:var(--navy);padding:8px 13px;border-radius:999px;font-weight:700;font-size:14px}
+.langbtn{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:999px;padding:9px 13px;font-weight:800;cursor:pointer;margin-right:6px}
 </style>
 </head>
 <body>
@@ -50,7 +51,7 @@
 <header><div class="container nav">
 <a class="brand" href="#home" aria-label="KMHWATER home"><span class="brand-mark"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3C12 9 6 14.2 6 20a10 10 0 0 0 20 0C26 14.2 20 9 16 3Z" fill="#B8F2E6"/><path d="M10 21c.5 3 2.4 4.8 5 5.2" stroke="#087EAA" stroke-width="2" stroke-linecap="round"/></svg></span><span>KMHWATER<small>WATER, MADE SIMPLE</small></span></a>
 <nav class="navlinks" id="navlinks"><a href="#products">Our water</a><a href="#how">How it works</a><a href="#why">Why KMHWATER</a><a href="#contact">Contact</a></nav>
-<div class="nav-actions"><button class="btn btn-light" onclick="openAccount()">My account</button><button class="btn btn-primary cart-btn" onclick="openCart()">Order <span class="cart-count" id="cartCount">0</span></button><button class="menu-toggle" aria-label="Open menu" onclick="toggleMenu()">☰</button></div>
+<div class="nav-actions"><button class="langbtn" id="langbtn" onclick="setLang()">EN</button><button class="btn btn-light" onclick="openAccount()">My account</button><button class="btn btn-primary cart-btn" onclick="openCart()">Order <span class="cart-count" id="cartCount">0</span></button><button class="menu-toggle" aria-label="Open menu" onclick="toggleMenu()">☰</button></div>
 </div></header>
 <main id="home">
 <section class="hero"><div class="container hero-grid"><div><div class="eyebrow"><span></span> Simple, reliable water delivery</div><h1>Good water.<br><em>Right to your door.</em></h1><p>Stay hydrated without the extra trip. Choose what you need, tell us where to deliver, and let KMHWATER take care of the rest.</p><div class="pricestrip" id="pricestrip"></div><div class="hero-ctas"><a class="btn btn-primary" href="#products">Explore products <span>↗</span></a><button class="btn btn-outline" onclick="openAccount()">Manage my orders</button></div><div class="trust-row"><span><i class="check">✓</i> Straightforward prices</span><span><i class="check">✓</i> Convenient ordering</span><span><i class="check">✓</i> Casablanca-focused</span></div></div>
@@ -66,12 +67,16 @@
 <div class="toast" id="toast" role="status"></div>
 <script>
 const COST=10;
-const PRODUCTS=[{id:'small',name:'Everyday bottle',size:'5 L bottle',units:1,price:13,desc:'A practical size for daily use.',icon:'🫗',tag:'Popular'}];
+const PRODUCTS=[{id:'small',name:'Everyday bottle',fr:'bidon de 5 L',size:'5 L bottle',units:1,price:13,desc:'A practical size for daily use.',icon:'🫗',tag:'Popular'}];
 const money=n=>Number(n).toFixed(2).replace(/\.00$/,'')+' MAD';
 const pk=c=>PRODUCTS.filter(p=>(c[p.id]||0)>0);
 const tot=c=>pk(c).reduce((a,p)=>a+p.price*c[p.id],0);
 const jugs=c=>pk(c).reduce((a,p)=>a+p.units*c[p.id],0);
+const summF=c=>pk(c).map(p=>c[p.id]+' × '+p.fr).join(', ');
+const stF={Pending:'en attente',Confirmed:'confirmée','Out for delivery':'en cours de livraison',Delivered:'livrée',Cancelled:'annulée'};
 const summ=c=>pk(c).map(p=>c[p.id]+' × '+p.name).join(', ');
+const SLF=['Dès que possible (~45 min)',"Aujourd'hui 18h–20h",'Demain 10h–12h','Demain 18h–20h'];
+const tf=x=>SLF[SL.indexOf(x)]||x;
 const WA2='212675675434';
 const WA='212691291927'; // KMHWATER WhatsApp Business number, international format, no +
 const API='https://script.google.com/macros/s/AKfycbz9HzPHhMYhUSPB_sIbVngdQOVUeSaVmfptCRwEJhw5WlaWpQbl_DwuFLuvtTdxtQIe/exec';
@@ -86,7 +91,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const me=()=>d.users.find(u=>u.id===d.cur);
 let v='cust',step=null,o={cart:{},time:SL[0],pay:'Cash on delivery'},tab='Dashboard',last=null;
-const S=['addr','water','time','pay','confirm'];
+const S=['addr','water','time','confirm'];
 
 let tm=null;
 function app(){
@@ -115,64 +120,60 @@ function cust(){
  }
  if(step==='track'){
   const x=d.orders.find(y=>y.id===last);if(!x)return go('home');
-  const i=ST.indexOf(x.status),sub=d.subs[u.id];
+  const i=ST.indexOf(x.status);
   return`<div class="card"><div class="row"><h2>${x.id}</h2><span class="badge">${x.status}</span></div>
   ${x.status==='Cancelled'?'<p>This order was cancelled.</p>':`<ul class="tl">${ST.map((s,k)=>`<li class="${k<=i?'on':''}">${s}</li>`).join('')}</ul>`}
   <p class="m">${x.items} · ${x.total} MAD · ${x.pay}<br>${esc(x.time)}</p></div>
-  ${x.status==='Pending'?`<a class="wbtn" target="_blank" rel="noopener" href="${esc(wa(WA,`New KMHWATER order ${x.id}\n${x.items} (${x.total} MAD)\nName: ${x.name}\nPhone: ${x.phone}\nAddress: ${x.addr}\nTime: ${x.time}\nPayment: ${x.pay}`))}">WhatsApp didn't open? Tap here to send your order</a><a class="wbtn" style="background:#128c7e" target="_blank" rel="noopener" href="${esc(wa(WA2,om(x)))}">Or send to our 2nd number: 06 75 67 54 34</a>`:''}
+  ${x.status==='Pending'?`<a class="wbtn" target="_blank" rel="noopener" href="${esc(wa(WA,om(x)))}">WhatsApp didn't open? Tap here to send your order</a><a class="wbtn" style="background:#128c7e" target="_blank" rel="noopener" href="${esc(wa(WA2,om(x)))}">Or send to our 2nd number: 06 75 67 54 34</a>`:''}
   <button onclick="reorder('${x.id}')">Order again</button>
-  <button class="o" onclick="d.subs['${u.id}']=${sub?'null':`{qty:${x.qty},freq:'Every week'}`};sv();app()">${sub?'✓ Subscribed weekly — tap to stop':'Subscribe: same order every week'}</button>
-  <button class="o" onclick="go('home')">Home</button>`;
+    <button class="o" onclick="go('home')">Home</button>`;
  }
- const k=S.indexOf(step),bar=`<div class="bar"><i style="width:${(k+1)*20}%"></i></div>`,back=k>0?`<button class="o" onclick="go('${S[k-1]}')">Back</button>`:`<button class="o" onclick="go('home')">Cancel</button>`;
- if(step==='addr')return bar+`<div class="card"><h2>Where to deliver?</h2><label>Address</label><textarea id="a" rows="2" placeholder="Residence, building, room / street, neighborhood">${esc(u.addr)}</textarea><label>Phone</label><input id="p" type="tel" value="${esc(u.phone)}"><button onclick="sa()">Continue</button></div>`+back;
+ const k=S.indexOf(step),bar=`<div class="bar"><i style="width:${(k+1)*25}%"></i></div>`,back=k>0?`<button class="o" onclick="go('${S[k-1]}')">Back</button>`:`<button class="o" onclick="go('home')">Cancel</button>`;
+ if(step==='addr')return bar+`<div class="card"><h2>Where to deliver?</h2><label>Address</label><textarea id="a" rows="2" placeholder="Residence, building, room / street, neighborhood">${esc(u.addr)}</textarea><label>Phone</label><input id="p" type="tel" value="${esc(u.phone)}" readonly><button onclick="sa()">Continue</button></div>`+back;
  if(step==='water')return bar+`<div class="card"><h2>Choose water</h2>${PRODUCTS.map(p=>`<div class="row" style="margin:10px 0"><div><b>${p.name}</b><div class="m">${p.size} · ${money(p.price)}</div></div><div class="q" style="margin:0;gap:10px"><button class="o" style="width:44px;font-size:22px" onclick="qa('${p.id}',-1)">−</button><b style="font-size:22px">${o.cart[p.id]||0}</b><button class="o" style="width:44px;font-size:22px" onclick="qa('${p.id}',1)">+</button></div></div>`).join('')}<div class="row"><b>Total</b><b>${tot(o.cart)} MAD</b></div><button ${jugs(o.cart)?'':'disabled style="opacity:.5"'} onclick="go('time')">Continue</button></div>`+back;
- if(step==='time')return bar+`<div class="card"><h2>Delivery time</h2>${SL.map(s=>`<button class="opt" onclick="o.time='${s}';go('pay')">${s}</button>`).join('')}</div>`+back;
- if(step==='pay')return bar+`<div class="card"><h2>Payment</h2>${['Cash on delivery','Mobile payment'].map(s=>`<button class="opt" onclick="o.pay='${s}';go('confirm')">${s}</button>`).join('')}</div>`+back;
- if(step==='confirm')return bar+`<div class="card"><h2>Confirm</h2><div class="row"><span>${summ(o.cart)}</span><b>${tot(o.cart)} MAD</b></div><p class="m">📍 ${esc(u.addr)}<br>🕒 ${esc(o.time)}<br>💳 ${esc(o.pay)}</p><button onclick="place()">Confirm order · ${tot(o.cart)} MAD</button></div>`+back;
+ if(step==='time')return bar+`<div class="card"><h2>Delivery time</h2>${SL.map(s=>`<button class="opt" onclick="o.time='${s}';go('confirm')">${s}</button>`).join('')}</div>`+back;
+  if(step==='confirm')return bar+`<div class="card"><h2>Confirm</h2><div class="row"><span>${summ(o.cart)}</span><b>${tot(o.cart)} MAD</b></div><p class="m">📍 ${esc(u.addr)}<br>🕒 ${esc(o.time)}<br>💳 ${esc(o.pay)}</p><button onclick="place()">Confirm order · ${tot(o.cart)} MAD</button></div>`+back;
 }
 let am=null;
-function mk(){const n=$('#n').value.trim(),p=$('#p').value.trim(),k=$('#k').value.trim();
- if(!n||dg(p).length<9||!/^\d{4}$/.test(k))return $('#er').textContent='Enter your name, phone number and a 4-digit PIN.';
- if(d.users.some(x=>dg(x.phone)===dg(p)))return $('#er').textContent='This number already has an account on this phone. Go back and tap "I have an account".';
- const u={id:'u'+Date.now(),name:n,phone:p,pin:k,addr:'',created:new Date().toISOString()};d.users.push(u);d.cur=u.id;sv();step='addr';app()}
-function lg(){const p=$('#p').value.trim(),k=$('#k').value.trim(),u=d.users.find(x=>dg(x.phone)===dg(p));
- if(!u)return $('#er').textContent='No account for this number on this phone. Go back and tap "My 1st order" (20 seconds).';
- if(u.pin!==k)return $('#er').textContent='Wrong PIN.';
- d.cur=u.id;sv();step=null;am=null;app()}
-const om=x=>`New KMHWATER order ${x.id}\n${x.items} (${x.total} MAD)\nName: ${x.name}\nPhone: ${x.phone}\nAddress: ${x.addr}\nTime: ${x.time}\nPayment: ${x.pay}`;
-function sa(){const a=$('#a').value.trim(),p=$('#p').value.trim();if(!a||!p)return;const u=me();u.addr=a;u.phone=p;sv();go('water')}
+const api=o=>fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(o)}).then(r=>r.json());
+const er=t=>{const e=$('#er');if(e)e.textContent=t};
+function loginOk(u,pin,orders){d.users=d.users.filter(x=>dg(x.phone)!==dg(u.phone));const nu={id:u.id,name:u.name,phone:u.phone,pin:pin,addr:u.addr||'',created:''};d.users.push(nu);d.cur=nu.id;(orders||[]).forEach(r=>{if(d.orders.some(y=>y.id===r.id))return;const q=+r.qty||1;d.orders.push({id:r.id,uid:nu.id,name:nu.name,phone:nu.phone,addr:nu.addr,qty:q,total:+r.total||0,time:String(r.time),pay:'Cash on delivery',status:r.status,items:q+' × '+PRODUCTS[0].name,cart:{small:q},at:String(r.at)})});d.orders.sort((a,b)=>String(b.at).localeCompare(String(a.at)));sv();step=null;am=null;app()}
+async function mk(){const n=$('#n').value.trim(),p=$('#p').value.trim(),k=$('#k').value.trim();if(!n||dg(p).length<9||!/^\d{4}$/.test(k))return er('Enter your name, phone number and a 4-digit PIN.');er('…');try{const j=await api({action:'register',name:n,phone:p,pin:k});if(!j.ok)return er(j.err==='exists'?'This number already has an account. Go back and tap "I have an account".':'Something went wrong. Try again.');loginOk(j.user,k,[]);step='addr';app()}catch(e){er('No connection. Try again.')}}
+async function lg(){const p=$('#p').value.trim(),k=$('#k').value.trim();if(!p||!k)return er('Wrong phone number or PIN.');er('…');try{const j=await api({action:'login',phone:p,pin:k});if(!j.ok)return er('Wrong phone number or PIN.');loginOk(j.user,k,j.orders)}catch(e){er('No connection. Try again.')}}
+const om=x=>`Nouvelle commande KMHWATER ${x.id}\n${summF(x.cart||{small:x.qty})} (${x.total} MAD)\nNom : ${x.name}\nTéléphone : ${x.phone}\nAdresse : ${x.addr}\nHeure : ${tf(x.time)}\nPaiement : espèces à la livraison`;
+function sa(){const a=$('#a').value.trim();if(!a)return;const u=me();u.addr=a;sv();api({action:'saveaddr',phone:u.phone,pin:u.pin,addr:a}).catch(()=>{});go('water')}
 function place(){const u=me();const x={id:'KMH-'+Date.now().toString().slice(-6),uid:u.id,name:u.name,phone:u.phone,addr:u.addr,qty:jugs(o.cart),total:tot(o.cart),items:summ(o.cart),cart:{...o.cart},time:o.time,pay:o.pay,status:'Pending',at:new Date().toISOString()};d.orders.unshift(x);sv();sendOrder(x);last=x.id;go('track');try{window.open(wa(WA,om(x)),'_blank')}catch(e){}o={cart:{},time:SL[0],pay:x.pay};updateCount()}
 addEventListener('storage',e=>{if(e.key==='kmh2'){try{d=JSON.parse(e.newValue)}catch(x){}if(v!=='pin')app()}});
 
 // ---------- Owner back-office ----------
 const post=o=>{try{fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(o)})}catch(e){}};
-function sendOrder(x){post({action:'order',id:x.id,name:x.name,phone:x.phone,addr:x.addr,qty:x.qty,total:x.total,time:x.time,pay:x.pay+' · '+x.items})}
+function sendOrder(x){post({action:'order',id:x.id,name:x.name,phone:x.phone,addr:x.addr,qty:x.qty,total:x.total,time:tf(x.time),pay:'Espèces à la livraison · '+summF(x.cart)})}
 function chk(){fetch(API+'?action=track&id='+encodeURIComponent(last)).then(r=>r.json()).then(j=>{const x=AO.find(y=>y.id===last);if(j.ok&&x&&j.status&&j.status!==x.status){x.status=j.status;sv();app()}}).catch(()=>{})}
-let AK='',AO=[];
-async function alog(){const k=$('#pin').value;$('#pe').textContent='Checking…';try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(k));const j=await r.json();if(j.ok){AK=k;AO=j.orders.reverse();v='adm';app()}else $('#pe').textContent='Wrong password.'}catch(e){$('#pe').textContent='No connection. Try again.'}}
-async function loadA(){try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(AK));const j=await r.json();if(j.ok){const n=j.orders.reverse();if(JSON.stringify(n)!==JSON.stringify(AO)){AO=n;if(v==='adm')app()}}}catch(e){}}
-function addEx(){const n=$('#ex1').value.trim(),a=+$('#ex2').value;if(!n||!(a>0))return;d.exp=d.exp||[];d.exp.push({n:n,a:a,t:today()});sv();app()}
+let AK='',AO=[],AS=0,AE=[];
+async function alog(){const k=$('#pin').value;$('#pe').textContent='Checking…';try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(k));const j=await r.json();if(j.ok){AK=k;AO=j.orders.reverse();AS=j.stock;AE=j.expenses;v='adm';app()}else $('#pe').textContent='Wrong password.'}catch(e){$('#pe').textContent='No connection. Try again.'}}
+async function loadA(){try{const r=await fetch(API+'?action=list&key='+encodeURIComponent(AK));const j=await r.json();if(j.ok){const n=j.orders.reverse();if(JSON.stringify([n,j.stock,j.expenses])!==JSON.stringify([AO,AS,AE])){AO=n;AS=j.stock;AE=j.expenses;if(v==='adm')app()}}}catch(e){}}
+function addEx(){const n=$('#ex1').value.trim(),a=+$('#ex2').value;if(!n||!(a>0))return;post({action:'addexp',key:AK,n:n,a:a,t:today()});AE=AE.concat([{t:today(),n:n,a:a}]);app();setTimeout(loadA,2500)}
+function addStock(){const n=+$('#ad').value;if(!(n>0))return;post({action:'addstock',key:AK,n:n});AS+=n;app();setTimeout(loadA,2500)}
 function cu(){const m={};AO.forEach(x=>{const k=dg(x.phone);m[k]=m[k]||{name:x.name,phone:x.phone,addr:x.addr,n:0,sum:0};m[k].n++;m[k].sum+=+x.total||0});return Object.values(m)}
 
 const T=['Dashboard','Orders','Customers','Deliveries','Stock','Revenue','Expenses','Reports'];
 const day=s=>s.slice(0,10),today=()=>new Date().toISOString().slice(0,10);
 const dl=()=>AO.filter(x=>x.status==='Delivered');
-function setSt(id,st){const x=AO.find(y=>y.id===id);if(!x)return;d.sd=d.sd||{};if(st==='Delivered'&&!d.sd[id]){d.sd[id]=1;d.stock=Math.max(0,d.stock-(+x.qty||0))}x.status=st;sv();post({action:'status',key:AK,id:id,status:st});app()}
-function ord(x,btn){return`<div class="card"><div class="row"><b>${x.id}</b><span class="badge">${x.status}</span></div><p>${esc(x.name)} · ${x.qty} jug(s) · <b>${x.total} MAD</b><br><span class="m">📍 ${esc(x.addr)}<br>🕒 ${esc(x.time)} · 💳 ${esc(x.pay)}</span></p>${btn?`<div class="row"><a href="tel:${esc(x.phone)}" style="flex:1"><button class="o" style="margin:0">Call</button></a><a class="wbtn" style="flex:1;margin:0" target="_blank" rel="noopener" href="${esc(wa(x.phone,`Hello ${x.name}, your KMHWATER order ${x.id} (${x.qty} jug(s), ${x.total} MAD) is now: ${x.status}.`))}">WhatsApp</a><select onchange="setSt('${x.id}',this.value)" style="flex:1;margin:0">${[...ST,'Cancelled'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></div>`:''}</div>`}
+function setSt(id,st){const x=AO.find(y=>y.id===id);if(!x)return;x.status=st;post({action:'status',key:AK,id:id,status:st});app();setTimeout(loadA,2500)}
+function ord(x,btn){return`<div class="card"><div class="row"><b>${x.id}</b><span class="badge">${x.status}</span></div><p>${esc(x.name)} · ${x.qty} jug(s) · <b>${x.total} MAD</b><br><span class="m">📍 ${esc(x.addr)}<br>🕒 ${esc(x.time)} · 💳 ${esc(x.pay)}</span></p>${btn?`<div class="row"><a href="tel:${esc(x.phone)}" style="flex:1"><button class="o" style="margin:0">Call</button></a><a class="wbtn" style="flex:1;margin:0" target="_blank" rel="noopener" href="${esc(wa(x.phone,`Bonjour ${x.name}, votre commande KMHWATER ${x.id} est maintenant : ${stF[x.status]||x.status}.`))}">WhatsApp</a><select onchange="setSt('${x.id}',this.value)" style="flex:1;margin:0">${[...ST,'Cancelled'].map(s=>`<option value="${s}" ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></div>`:''}</div>`}
 function adm(){
  const tb=`<div class="tabs">${T.map(t=>`<button class="${t===tab?'on':''}" onclick="tab='${t}';app()">${t}</button>`).join('')}<button onclick="loadA()">↻</button></div>`;
- const rev=dl().reduce((a,x)=>a+x.total,0),units=dl().reduce((a,x)=>a+x.qty,0),profit=rev-units*COST,ex=(d.exp||[]).reduce((a,e)=>a+e.a,0),net=profit-ex;
+ const rev=dl().reduce((a,x)=>a+x.total,0),units=dl().reduce((a,x)=>a+x.qty,0),profit=rev-units*COST,ex=AE.reduce((a,e)=>a+e.a,0),net=profit-ex;
  if(tab==='Dashboard'){const t=AO.filter(x=>day(x.at)===today()),pend=AO.filter(x=>x.status==='Pending').length;
-  return tb+`<div class="kpi"><div class="card"><b>${t.length}</b><span class="m">Orders today</span></div><div class="card"><b>${pend}</b><span class="m">Pending</span></div><div class="card"><b>${rev}</b><span class="m">Revenue (MAD)</span></div><div class="card"><b style="color:${d.stock<15?'var(--r)':'inherit'}">${d.stock}</b><span class="m">Jugs in stock${d.stock<15?' · low!':''}</span></div></div>`}
+  return tb+`<div class="kpi"><div class="card"><b>${t.length}</b><span class="m">Orders today</span></div><div class="card"><b>${pend}</b><span class="m">Pending</span></div><div class="card"><b>${rev}</b><span class="m">Revenue (MAD)</span></div><div class="card"><b style="color:${AS<15?'var(--r)':'inherit'}">${AS}</b><span class="m">Jugs in stock${AS<15?' · low!':''}</span></div></div>`}
  if(tab==='Orders')return tb+(AO.map(x=>ord(x,1)).join('')||'<p class="m">No orders yet.</p>');
  if(tab==='Customers')return tb+(cu().map(u=>`<div class="card"><b>${esc(u.name)}</b><p class="m">📞 ${esc(u.phone)}<br>📍 ${esc(u.addr)||'—'}<br>${u.n} orders · ${u.sum} MAD</p></div>`).join('')||'<p class="m">No customers yet.</p>');
  if(tab==='Deliveries'){const l=AO.filter(x=>x.status==='Confirmed'||x.status==='Out for delivery'||x.status==='Pending');return tb+(l.map(x=>ord(x,1)).join('')||'<p class="m">Nothing to deliver.</p>')}
- if(tab==='Stock')return tb+`<div class="card"><h2>${d.stock} jugs</h2><p class="m">Drops automatically when an order is marked Delivered.</p><label>Add stock received</label><input id="ad" type="number" min="1" inputmode="numeric" placeholder="e.g. 60"><button onclick="d.stock+=+($('#ad').value||0);sv();app()">Add to stock</button></div>`;
- if(tab==='Expenses'){d.exp=d.exp||[];return tb+`<div class="card"><h2>Add expense</h2><label>What for</label><input id="ex1" placeholder="Fuel, bottles, transport…"><label>Amount (MAD)</label><input id="ex2" type="number" inputmode="decimal"><button onclick="addEx()">Save expense</button><p class="m">Total so far: ${ex} MAD. Saved on this phone.</p></div>`+d.exp.slice().reverse().map(e=>`<div class="card row"><span>${esc(e.n)}<br><span class="m">${e.t}</span></span><b>${e.a} MAD</b></div>`).join('')}
+ if(tab==='Stock')return tb+`<div class="card"><h2>${AS} jugs</h2><p class="m">Drops automatically when an order is marked Delivered.</p><label>Add stock received</label><input id="ad" type="number" min="1" inputmode="numeric" placeholder="e.g. 60"><button onclick="addStock()">Add to stock</button></div>`;
+ if(tab==='Expenses'){return tb+`<div class="card"><h2>Add expense</h2><label>What for</label><input id="ex1" placeholder="Fuel, bottles, transport…"><label>Amount (MAD)</label><input id="ex2" type="number" inputmode="decimal"><button onclick="addEx()">Save expense</button><p class="m">Total so far: ${ex} MAD. Saved in your Google Sheet.</p></div>`+AE.slice().reverse().map(e=>`<div class="card row"><span>${esc(e.n)}<br><span class="m">${String(e.t).slice(0,10)}</span></span><b>${e.a} MAD</b></div>`).join('')}
  if(tab==='Revenue'){const by={};dl().forEach(x=>{by[day(x.at)]=(by[day(x.at)]||0)+x.total});
   return tb+`<div class="kpi"><div class="card"><b>${rev}</b><span class="m">Revenue</span></div><div class="card"><b>${profit}</b><span class="m">Gross margin</span></div><div class="card"><b>${ex}</b><span class="m">Expenses</span></div><div class="card"><b>${net}</b><span class="m">Net profit</span></div></div><div class="card" style="margin-top:12px"><b>Suggested split of net profit</b><div class="row"><span>Growth (50%)</span><b>${Math.round(Math.max(0,net)*.5)} MAD</b></div><div class="row"><span>Reserve (30%)</span><b>${Math.round(Math.max(0,net)*.3)} MAD</b></div><div class="row"><span>Partners (20%)</span><b>${Math.round(Math.max(0,net)*.2)} MAD</b></div></div><div class="card" style="margin-top:12px">${Object.keys(by).sort().reverse().map(k=>`<div class="row"><span>${k}</span><b>${by[k]} MAD</b></div>`).join('')||'<span class="m">No delivered orders yet.</span>'}</div>`}
- const rp=`KMHWATER report — ${today()}\nOrders: ${AO.length} (delivered ${dl().length}, cancelled ${AO.filter(x=>x.status==='Cancelled').length})\nJugs delivered: ${units}\nRevenue: ${rev} MAD\nGross margin: ${profit} MAD\nExpenses: ${ex} MAD\nNet profit: ${net} MAD\nStock left: ${d.stock}\nCustomers: ${cu().length}`;
+ const rp=`KMHWATER report — ${today()}\nOrders: ${AO.length} (delivered ${dl().length}, cancelled ${AO.filter(x=>x.status==='Cancelled').length})\nJugs delivered: ${units}\nRevenue: ${rev} MAD\nGross margin: ${profit} MAD\nExpenses: ${ex} MAD\nNet profit: ${net} MAD\nStock left: ${AS}\nCustomers: ${cu().length}`;
  return tb+`<div class="card"><h2>Summary</h2><textarea rows="8" readonly>${esc(rp)}</textarea><p class="m">Select and copy to send on WhatsApp.</p></div>`;
 }
 
@@ -191,5 +192,58 @@ function renderProducts(){document.getElementById('productGrid').innerHTML=PRODU
 document.getElementById('year').textContent=new Date().getFullYear();
 document.getElementById('pricestrip').innerHTML=PRODUCTS.map(p=>'<span>'+p.size+' · '+money(p.price)+'</span>').join('');
 renderProducts();updateCount();app();
+const LANG=(()=>{try{return localStorage.getItem('kmhl')||'fr'}catch(e){return 'fr'}})();
+function setLang(){try{localStorage.setItem('kmhl',LANG==='fr'?'en':'fr')}catch(e){}location.reload()}
+const FR={'casablanca delivery':'Livraison à Casablanca','good quality. good price. delivered.':'Bonne qualité. Bon prix. Livré.','water, made simple':"L'eau, tout simplement",'our water':'Notre eau','how it works':'Comment ça marche','why kmhwater':'Pourquoi KMHWATER','my account':'Mon compte','order':'Commander','simple, reliable water delivery':"Livraison d'eau simple et fiable",'good water.':'De la bonne eau.','right to your door.':"Jusqu'à votre porte.",'stay hydrated without the extra trip. choose what you need, tell us where to deliver, and let kmhwater take care of the rest.':"Restez hydraté sans vous déplacer. Choisissez ce qu'il vous faut, dites-nous où livrer, et KMHWATER s'occupe du reste.",'explore products ↗':'Voir les produits ↗','manage my orders':'Gérer mes commandes','straightforward prices':'Prix clairs','convenient ordering':'Commande pratique','casablanca-focused':'Pensé pour Casablanca','easy ordering':'Commande facile','choose in a few taps':'Choisissez en quelques clics','made for everyday':'Pour tous les jours','home · study · work':'Maison · Études · Travail','the essentials':"L'essentiel",'choose your water.':'Choisissez votre eau.','pick the size and quantity that works for you. tap + to add a pack to your order.':"Choisissez la quantité qui vous convient. Appuyez sur + pour l'ajouter à votre commande.",'everyday hydration':'Hydratation au quotidien','order the amount you need for your room, household, or shared space.':"Commandez la quantité qu'il vous faut pour votre chambre, votre foyer ou votre espace partagé.",'simple on your phone':'Simple sur votre téléphone','a clean, mobile-friendly experience that makes placing an order straightforward.':'Une expérience claire et adaptée au mobile pour commander facilement.','personal service':'Service personnalisé','clear order details help you and the delivery team stay on the same page.':"Des détails de commande clairs pour que vous et l'équipe de livraison soyez d'accord.",'three simple steps':'Trois étapes simples','water delivery,':"La livraison d'eau,",'without the hassle.':'sans prise de tête.','we want ordering to be clear from the first tap to the final delivery. start with the products, enter your contact details, and review everything before you submit.':"Nous voulons que la commande soit claire du premier clic à la livraison. Choisissez vos produits, indiquez vos coordonnées et vérifiez tout avant d'envoyer.",'start an order →':'Commencer une commande →','choose':'Choisir','select your water products and the quantity you want.':'Sélectionnez votre eau et la quantité souhaitée.','tell us where':'Dites-nous où','add your name, phone number, and delivery address.':'Ajoutez votre nom, votre téléphone et votre adresse de livraison.','review & send':'Vérifier et envoyer','check your order summary and send it on whatsapp.':'Vérifiez le récapitulatif de votre commande et envoyez-le sur WhatsApp.','order now':'Commander maintenant','your order, in 2 minutes.':'Votre commande en 2 minutes.','create your account once, then reorder in 2 taps. delivery in casablanca.':'Créez votre compte une fois, puis recommandez en 2 clics. Livraison à Casablanca.','ready to order smarter?':'Prêt à commander plus simplement ?','need to ask a question first? call or message either delivery number.':"Une question avant de commander ? Appelez ou écrivez à l'un des deux numéros de livraison.",'order water':"Commander de l'eau",'owner access':'Accès propriétaire','kmhwater. all rights reserved.':'KMHWATER. Tous droits réservés.','delivery: 06 91 29 19 27 · 06 75 67 54 34':'Livraison : 06 91 29 19 27 · 06 75 67 54 34','everyday bottle':'Bidon du quotidien','5 l bottle · a practical size for daily use.':'Bidon de 5 L · Un format pratique pour tous les jours.','popular':'Populaire','/ bottle':'/ bidon','added to your order':'Ajouté à votre commande',
+'water at your door.':"De l'eau à votre porte.",'my 1st order':'Ma 1re commande','i have an account':"J'ai un compte",'back':'Retour','create your account once, then reorder in 2 taps.':'Créez votre compte une fois, puis recommandez en 2 clics.','full name':'Nom complet','phone / whatsapp':'Téléphone / WhatsApp','choose a 4-digit pin':'Choisissez un code PIN à 4 chiffres','create account':'Créer mon compte','welcome back':'Bon retour','your 4-digit pin':'Votre code PIN à 4 chiffres','log in':'Se connecter','log out':'Se déconnecter','enter your name, phone number and a 4-digit pin.':'Entrez votre nom, votre numéro et un code PIN à 4 chiffres.','this number already has an account. go back and tap "i have an account".':"Ce numéro a déjà un compte. Revenez en arrière et touchez « J'ai un compte ».",'wrong phone number or pin.':'Numéro ou code PIN incorrect.','no connection. try again.':'Pas de connexion. Réessayez.','something went wrong. try again.':'Une erreur est survenue. Réessayez.','where to deliver?':'Où livrer ?','address':'Adresse','phone':'Téléphone','continue':'Continuer','cancel':'Annuler','choose water':'Choisissez votre eau','delivery time':'Heure de livraison','confirm':'Confirmer','pending':'En attente','confirmed':'Confirmée','out for delivery':'En cours de livraison','delivered':'Livrée','cancelled':'Annulée','this order was cancelled.':'Cette commande a été annulée.',"whatsapp didn't open? tap here to send your order":"WhatsApp ne s'est pas ouvert ? Touchez ici pour envoyer votre commande",'or send to our 2nd number: 06 75 67 54 34':'Ou envoyez au 2e numéro : 06 75 67 54 34','order again':'Recommander','home':'Accueil','track delivery':'Suivre la livraison','reorder now':'Recommander maintenant','new order':'Nouvelle commande','edit my address':'Modifier mon adresse','residence, building, room / street, neighborhood':'Résidence, immeuble, chambre / rue, quartier','exit':'Quitter','owner password':'Mot de passe propriétaire','open dashboard':'Ouvrir le tableau de bord','checking…':'Vérification…','wrong password.':'Mot de passe incorrect.','dashboard':'Tableau de bord','orders':'Commandes','customers':'Clients','deliveries':'Livraisons','stock':'Stock','revenue':'Revenus','expenses':'Dépenses','reports':'Rapports','orders today':'Commandes du jour','revenue (mad)':'Revenus (MAD)','no orders yet.':'Aucune commande.','no customers yet.':'Aucun client.','nothing to deliver.':'Rien à livrer.','call':'Appeler','add expense':'Ajouter une dépense','what for':'Pour quoi','amount (mad)':'Montant (MAD)','save expense':'Enregistrer la dépense','add stock received':'Ajouter le stock reçu','add to stock':'Ajouter au stock','drops automatically when an order is marked delivered.':'Diminue automatiquement quand une commande est marquée Livrée.','gross margin':'Marge brute','net profit':'Bénéfice net','suggested split of net profit':'Répartition suggérée du bénéfice net','growth (50%)':'Croissance (50 %)','reserve (30%)':'Réserve (30 %)','partners (20%)':'Associés (20 %)','no delivered orders yet.':'Aucune commande livrée.','summary':'Résumé','select and copy to send on whatsapp.':'Sélectionnez et copiez pour envoyer sur WhatsApp.'};
+const RX=[[/^Hi, (.*)$/,'Bonjour, $1'],[/^Confirm order · (.*)$/,'Confirmer la commande · $1'],[/^Jugs in stock( · low!)?$/,(m,a)=>'Bidons en stock'+(a?' · bas !':'')],[/^(-?\d+) jugs?$/,'$1 bidons'],[/^(\d+) jug\(s\)$/,'$1 bidon(s)'],[/^Total so far: (.*)\. Saved in your Google Sheet\.$/,'Total à ce jour : $1. Enregistré dans votre Google Sheet.'],[/^5 L bottle · (.*)$/,'Bidon de 5 L · $1'],[/^(\d+) orders · (.*)$/,'$1 commandes · $2'],[/^([📍🕒💳]) (.*)$/u,(m,a,b)=>a+' '+(FR[b.toLowerCase()]||b)]];
+Object.assign(FR,{
+"casablanca delivery":"Livraison d'eau à Casablanca","casablanca delivery ·":"Livraison d'eau à Casablanca ·",
+"good quality. good price. delivered.":"Bonne eau. Bon prix. Livrée chez vous.",
+"water, made simple":"L'eau, sans effort",
+"our water":"Notre bidon","how it works":"En 3 étapes","why kmhwater":"Pourquoi nous","order":"Commander",
+"simple, reliable water delivery":"Livraison d'eau à domicile",
+"good water.":"Plus de bidons à porter.",
+"right to your door.":"On vous livre l'eau.",
+"stay hydrated without the extra trip. choose what you need, tell us where to deliver, and let kmhwater take care of the rest.":"Commandez en 2 minutes depuis votre téléphone. Vous nous dites où livrer, on s'occupe du reste : vous gardez votre temps (et votre dos).",
+"explore products":"Voir le bidon","explore products ↗":"Voir le bidon ↗","manage my orders":"Mes commandes",
+"straightforward prices":"Prix clair, sans surprise","convenient ordering":"Commande en 2 min","casablanca-focused":"Livré à Casablanca",
+"easy ordering":"Rapide","choose in a few taps":"Quelques clics suffisent","made for everyday":"Pour tous","home · study · work":"Maison · Études · Bureau",
+"the essentials":"Notre bidon","choose your water.":"Un bidon, un prix.",
+"pick the size and quantity that works for you. tap + to add a pack to your order.":"Appuyez sur + pour l'ajouter à votre commande. Rien de compliqué.",
+"everyday hydration":"Toujours de l'eau à la maison",
+"order the amount you need for your room, household, or shared space.":"Chambre d'étudiant, appartement ou bureau : commandez ce qu'il vous faut, quand il vous faut.",
+"simple on your phone":"Tout se passe sur votre téléphone",
+"a clean, mobile-friendly experience that makes placing an order straightforward.":"Un site pensé pour le mobile : quelques clics et votre commande part sur WhatsApp.",
+"personal service":"Quelqu'un qui vous répond",
+"clear order details help you and the delivery team stay on the same page.":"Une question, un souci ? Appelez ou écrivez-nous : vous parlez à une vraie personne.",
+"three simple steps":"Facile comme 1, 2, 3","water delivery,":"L'eau livrée,","without the hassle.":"sans galère.",
+"we want ordering to be clear from the first tap to the final delivery. start with the products, enter your contact details, and review everything before you submit.":"Vous choisissez, vous donnez votre adresse, vous envoyez. Et vous vérifiez tout avant de valider.",
+"start an order →":"Je commande →",
+"choose":"Je choisis","select your water products and the quantity you want.":"Le nombre de bidons dont vous avez besoin.",
+"tell us where":"Je donne mon adresse","add your name, phone number, and delivery address.":"Votre nom, votre téléphone, votre adresse. Une seule fois.",
+"review & send":"J'envoie","check your order summary and send it on whatsapp.":"Vérifiez le récapitulatif, envoyez sur WhatsApp, et on arrive.",
+"order now":"Commander","your order, in 2 minutes.":"Votre bidon en 2 minutes chrono.",
+"create your account once, then reorder in 2 taps. delivery in casablanca.":"Un compte en 20 secondes, puis vos prochaines commandes se font en 2 clics.",
+"ready to order smarter?":"Soif ? On s'en occupe.",
+"need to ask a question first? call or message either delivery number.":"Une question avant de commander ? Appelez-nous ou écrivez-nous sur WhatsApp.",
+"order water":"Commander mon bidon","owner access":"Espace gérant",
+"everyday bottle":"Le bidon 5 L","5 l bottle · a practical size for daily use.":"5 L · Le bon format pour tous les jours.","popular":"Le plus demandé",
+"added to your order":"Ajouté à votre commande ✓",
+"water at your door.":"L'eau livrée chez vous.","my 1st order":"C'est ma 1re commande","i have an account":"J'ai déjà un compte",
+"create your account once, then reorder in 2 taps.":"Un compte en 20 secondes, et vos prochaines commandes se font en 2 clics.",
+"full name":"Prénom et nom","create account":"Créer mon compte","welcome back":"Content de vous revoir","log in":"Me connecter",
+"where to deliver?":"On vous livre où ?","continue":"Suivant","choose water":"Combien de bidons ?","delivery time":"Quand voulez-vous être livré ?","confirm":"Valider ma commande",
+"pending":"Reçue","out for delivery":"En route vers vous","delivered":"Livrée ✓",
+"or send to our 2nd number: 06 75 67 54 34":"Ou écrivez-nous sur notre 2e numéro : 06 75 67 54 34",
+"track delivery":"Suivre ma livraison","reorder now":"Même commande, en un clic"
+});
+RX.unshift([/^Confirm order · (.*)$/,'Valider ma commande · $1'],[/^5 L bottle · (.*)$/,'Bidon 5 L · $1']);
+const FRAG=[['Everyday bottle','Bidon 5 L'],['Cash on delivery','Espèces à la livraison'],['ASAP (~45 min)','Dès que possible (~45 min)'],['Today 18:00–20:00',"Aujourd'hui 18h–20h"],['Tomorrow 10:00–12:00','Demain 10h–12h'],['Tomorrow 18:00–20:00','Demain 18h–20h']];
+function trs(s){const t=s.trim();if(!t)return s;let r=FR[t.toLowerCase()];if(r===undefined)for(const[x,y]of RX)if(x.test(t)){r=t.replace(x,y);break}if(r===undefined){r=t;FRAG.forEach(f=>{r=r.split(f[0]).join(f[1])});if(r===t)return s}return s.replace(t,()=>r)}
+function trNode(n){if(n.nodeType===3){const r=trs(n.nodeValue);if(r!==n.nodeValue)n.nodeValue=r}else if(n.nodeType===1&&!/^(SCRIPT|STYLE|TEXTAREA)$/.test(n.tagName)){['placeholder','aria-label'].forEach(a=>{const v=n.getAttribute(a);if(v){const r=trs(v);if(r!==v)n.setAttribute(a,r)}});n.childNodes.forEach(trNode)}}
+if(LANG==='fr'){document.documentElement.lang='fr';new MutationObserver(ms=>ms.forEach(m=>{m.addedNodes.forEach(trNode);if(m.type==='characterData')trNode(m.target)})).observe(document.body,{childList:true,subtree:true,characterData:true});trNode(document.body)}
+const lb=document.getElementById('langbtn');if(lb)lb.textContent=LANG==='fr'?'EN':'FR';
+
 </script>
 </body></html>
